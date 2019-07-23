@@ -1,0 +1,31 @@
+  //favicon
+  $favicon = $_FILES['photo'];
+  $favName = $_FILES['photo']['name'];
+  $favTempName = $_FILES['photo']['tmp_name'];
+  $favSize = $_FILES['photo']['size'];
+  $favError = $_FILES['photo']['error'];
+  $favType = $_FILES['photo']['type'];
+
+  $fileExt = explode('.', $favName);
+  $fileActualExt = strtolower(end($fileExt));
+
+  $unique_image = md5(time());
+  $unique_image = substr($unique_image, 0, 10) . '.' . $fileActualExt;
+
+  $allowed = array( 'jpg', 'jpeg', 'png' );
+
+  if (!empty($favName)) {
+    if ( in_array($fileActualExt, $allowed) ) {
+      if ( $favError === 0 ) {
+
+        $fileDestination = 'photo/'.$unique_image;
+        $photoDestination = $fileDestination;
+
+        move_uploaded_file($favTempName, $fileDestination);
+
+      }
+    }
+  } else{
+    $photoDestination = "";
+  }
+  //favicon
