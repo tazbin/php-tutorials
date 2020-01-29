@@ -1,0 +1,151 @@
+<?php
+
+include 'database.php';
+
+class user{
+    private $db;
+    public function __construct(){
+        $this->db = new database();
+    }
+
+    public function emailExistance($email){
+        $sql = 'SELECT * FROM user_data WHERE email = :email';
+        $query = $this->db->pdo->prepare($sql);
+        $query->bindValue(':email', $email);
+        $query->execute();
+        if($query->rowCount() > 0){
+            return true;
+        } else{
+            return false;
+        }
+    }
+
+    public function userLogin($data){
+        $email   = $data['email'];
+        $pass    = $data['pass'];
+
+        if(empty($email) || empty($pass)){
+            $loginMsg = '<div class="alert alert-danger" role="alert">
+            <b>ERROR!</b> Fill all fields.
+          </div>';
+        } else if(!$this->emailExistance($email)){
+            $loginMsg = '<div class="alert alert-danger" role="alert">
+            <b>ERROR!</b> Email does not exist.
+          </div>';
+        } else{
+            $pass = md5($pass);
+
+            $sql = 'SELECT * FROM user_data WHERE email = :email && pass = :pass';
+            $query = $this->db->pdo->prepare($sql);
+            $query->bindValue(':email', $email);
+            $query->bindValue(':pass', $pass);
+            $query->execute();
+            $result = $query->fetch(PDO::FETCH_OBJ);
+            if($query->rowCount() > 0){
+
+                session::init();
+                session::set('login', true);
+                session::set('id', $result->id);
+                session::set('user_name', $result->user_name);
+                session::set('email', $result->email);
+                session::set('loginMsg', '<div class="alert alert-success" role="alert">
+                    <b>SUCCESS!</b> login success.
+                </div>');
+
+                $loginMsg = '<div class="alert alert-success" role="alert">
+                    <b>SUCCESS!</b> login success.</div>';
+
+                echo $_SESSION['user_name'];
+                
+                header('Location: home.php');
+            } else{
+                $loginMsg = '<div class="alert alert-danger" role="alert">
+                    <b>ERROR!</b> Incorrect password.
+                </div>';
+            }
+        }
+
+        echo $loginMsg;
+
+    }
+
+    public function userRegistration($data){
+        $email      = $data['email'];
+        $user_name  = $data['user_name'];
+        $pass       = $data['pass'];
+
+        if(empty($email) || empty($user_name) || empty($pass)){
+            $loginMsg = '<div class="alert alert-danger" role="alert">
+            <b>ERROR!</b> Fill all fieds.
+          </div>';
+        } else if( $this->emailExistance($email) ){
+            $loginMsg = '<div class="alert alert-danger" role="alert">
+            <b>ERROR!</b> This email already taken.
+          </div>';
+        } else{
+            $pass = md5($pass);
+
+            $sql = 'INSERT INTO user_data(user_name, email, pass) VALUES(:user_name, :email, :pass)';
+            $query = $this->db->pdo->prepare($sql);
+            $query->bindValue(':user_name', $user_name);
+            $query->bindValue(':email', $email);
+            $query->bindValue(':pass', $pass);
+            $query->execute();
+
+            $loginMsg = '<div class="alert alert-success" role="alert">
+            <b>SUCCESS!</b> Your are registered.
+          </div>';
+        }
+
+          echo $loginMsg;
+    }
+
+    public function getUserData(){
+        $sql = 'SELECT * FROM user_data';
+        $query = $this->db->pdo->prepare($sql);
+        $query->execute();
+        $result = $query->fetchAll();
+        
+        return $result;
+    }
+
+    public function getUserById($id){
+        $sql = 'SELECT * FROM user_data WHERE id = :id LIMIT 1';
+            $query = $this->db->pdo->prepare($sql);
+            $query->bindValue(':id', $id);
+            $query->execute();
+            $result = $query->fetch(PDO::FETCH_OBJ);
+
+            return $result;
+    }
+
+    public function updateUser($data){
+        $id         = $data['id'];
+        $user_name  = $data['user_name'];
+        $email      = $data['email'];
+
+        if( empty($user_name) || empty($email) ){
+            $updateMsg ='<div class="alert alert-danger" role="alert">
+            <b>ERROR!</b> Fill all fields.
+          </div>';
+        } else{
+            $sql = 'UPDATE user_data SET
+                        user_name = :user_name,
+                        email     = :email
+                        WHERE id  = :id';
+            $query = $this->db->pdo->prepare($sql);
+            $query->bindValue(':id', $id);
+            $query->bindValue(':user_name', $user_name);
+            $query->bindValue(':email', $email);
+            $query->execute();
+
+            $updateMsg ='<div class="alert alert-success" role="alert">
+            <b>SUCCESS!</b> Your data updated.
+          </div>';
+        }
+
+        echo $updateMsg;
+    }
+}
+
+?>
